@@ -177,7 +177,7 @@ BenchmarkResult run_benchmark(Graph& g, const Path& shortest_path, bool run_naiv
     }
 
     // Benchmark naive algorithm (skip for large graphs)
-    if (run_naive && result.n_vertices <= 500) {
+    if (run_naive && result.n_vertices <= 15000) {
         std::cout << "\n--- Running Naive Algorithm ---" << std::endl;
         start = high_resolution_clock::now();
 

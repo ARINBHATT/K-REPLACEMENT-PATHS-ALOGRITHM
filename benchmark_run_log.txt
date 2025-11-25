@@ -117,3 +117,33 @@ BENCHMARK SUMMARY
 
 Benchmark completed! Results saved to benchmark_results.csv
 --- End of Run 5/5 ---
+
+--- Start of Run 1/5 for benchmark.cpp ---
+
+==========================================================================================
+BENCHMARK SUMMARY
+==========================================================================================
+         n         m    Path Len     Naive (ms) Optimized (ms)     Speedup
+------------------------------------------------------------------------------------------
+        50       144           9           0.23           1.29        0.18x
+       100       501          14           0.77           8.11        0.09x
+       200      1926          24           3.49          57.86        0.06x
+       300      4553          34          11.56         204.00        0.06x
+       400      8028          44          24.23         428.38        0.06x
+       500     12400          54          46.98         850.82        0.06x
+      5000   1250675         504        SKIPPED      399134.11         N/A
+       100       261           9           0.44           2.76        0.16x
+       225       616          14           1.51          13.40        0.11x
+       400      1121          19           4.24          54.85        0.08x
+       625      1776          24        SKIPPED         168.62         N/A
+      1000     50138         104        SKIPPED        5437.72         N/A
+      2000    199749         204        SKIPPED       31748.38         N/A
+      5000   1246567         504        SKIPPED      423873.84         N/A
+
+Benchmark completed! Results saved to benchmark_results.csv
+
+--- Start of Run 1/5 for benchmark.cpp ---
+
+--- Start of Run 1/5 for benchmark.cpp ---
+
+--- Start of Run 1/5 for benchmark.cpp ---
