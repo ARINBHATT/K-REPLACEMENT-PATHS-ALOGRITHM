@@ -26,11 +26,15 @@ ShortDetour::ShortDetour(const Graph& G, const Path& P)
 void ShortDetour::compute_RD_table() {
     std::cout << "[ShortDetour] Computing RD-Table with L = " << L << std::endl;
 
+    // Reserve space for auxiliary graphs
+    auxiliary_graphs.resize(2 * L);
+
     // For each offset b from 0 to 2L-1
     for (int b = 0; b < 2 * L; b++) {
         // Create auxiliary graph and fill corresponding RD-table entries
-        AuxiliaryGraph aux_graph(graph_minus_path, shortest_path, b, L);
-        aux_graph.fill_RD_table(RD_table, shortest_path, b, L);
+        auto aux_graph = std::make_shared<AuxiliaryGraph>(graph_minus_path, shortest_path, b, L);
+        aux_graph->fill_RD_table(RD_table, shortest_path, b, L);
+        auxiliary_graphs[b] = aux_graph;
     }
 
     std::cout << "[ShortDetour] RD-Table computation complete" << std::endl;
@@ -57,10 +61,11 @@ Path ShortDetour::shortRepPath(int edge_index) {
     int best_distance = INF;
     int best_start = -1;
     int best_jump = -1;
+    int best_offset = -1; // Which auxiliary graph (offset b) was used
 
     // Find the best short detour that bypasses the removed edge
     // We need a detour from P[a] to P[b] where a <= edge_index < b
-    // and the detour length is <= 2L
+    // and the detour length is <= L
 
     for (int a = 0; a <= edge_index; a++) {
         for (int j = 1; j <= L; j++) {
@@ -85,21 +90,19 @@ Path ShortDetour::shortRepPath(int edge_index) {
                 best_distance = total_length;
                 best_start = a;
                 best_jump = j;
+                // Determine which offset b was used for this entry
+                best_offset = a % (2 * L);
             }
         }
     }
 
     // If no short detour found, return empty path
-    if (best_start == -1) {
+    if (best_start == -1 || best_offset == -1 || best_offset >= (int)auxiliary_graphs.size()) {
         return {};
     }
 
-    // Reconstruct the replacement path
-    // Path consists of: P[0..a] + detour(P[a] -> P[a+j]) + P[a+j..end]
-
-    // For now, we return an indicator path showing which detour was chosen
-    // In a full implementation, you would actually reconstruct the detour path through G-P
-    // This would require storing parent pointers from the Dijkstra computation
+    // Reconstruct the replacement path using parent pointers
+    // Path consists of: P[0..best_start] + detour(P[best_start] -> P[best_start+best_jump]) + P[best_start+best_jump..end]
 
     Path replacement;
 
@@ -108,15 +111,51 @@ Path ShortDetour::shortRepPath(int edge_index) {
         replacement.push_back(shortest_path[i]);
     }
 
-    // Note: The actual detour path from P[best_start] to P[best_start + best_jump]
-    // would need to be reconstructed from BFS/Dijkstra parent pointers
-    // For this implementation, we'll add a marker showing the jump
+    // Reconstruct the actual detour path from P[best_start] to P[best_start + best_jump]
+    // using parent pointers from the auxiliary graph
+    VertexID detour_start = shortest_path[best_start];
+    VertexID detour_end = shortest_path[best_start + best_jump];
 
-    // Skip to the end of detour
-    int detour_end = best_start + best_jump;
+    // Get the SSSP result from the appropriate auxiliary graph
+    auto& aux_graph = auxiliary_graphs[best_offset];
+    if (!aux_graph) {
+        return {}; // Auxiliary graph not available
+    }
 
-    // Add path suffix P[detour_end..end]
-    for (int i = detour_end; i < path_len; i++) {
+    const SSSPResult& sssp = aux_graph->get_sssp_result();
+
+    // Reconstruct path from detour_end back to the auxiliary root
+    Path detour_reverse;
+    VertexID curr = detour_end;
+
+    if (sssp.parents.find(curr) == sssp.parents.end()) {
+        return {}; // No path found in auxiliary graph
+    }
+
+    while (curr != aux_graph->get_root_id() && sssp.parents.find(curr) != sssp.parents.end()) {
+        detour_reverse.push_back(curr);
+        VertexID parent = sssp.parents.at(curr);
+        if (parent == -1) break;
+        curr = parent;
+    }
+
+    // Now we have the path from detour_end to some anchor point on P
+    // We need to reverse it and skip the first element (detour_start) and last element (detour_end)
+    std::reverse(detour_reverse.begin(), detour_reverse.end());
+
+    // The detour path should go from detour_start to detour_end through G-P
+    // Add the intermediate vertices (excluding detour_start which is already in replacement,
+    // but including detour_end which will be the last vertex of the detour)
+    for (size_t i = 0; i < detour_reverse.size(); i++) {
+        VertexID v = detour_reverse[i];
+        // Skip detour_start if it appears (already added)
+        if (v == detour_start) continue;
+        replacement.push_back(v);
+    }
+
+    // Add path suffix P[best_start+best_jump+1..end]
+    // Note: detour_end = P[best_start+best_jump] is already added from detour reconstruction
+    for (int i = best_start + best_jump + 1; i < path_len; i++) {
         replacement.push_back(shortest_path[i]);
     }
 
@@ -152,8 +191,8 @@ AuxiliaryGraph::AuxiliaryGraph(const Graph& G_minus_P, const Path& P, int b, int
 
 void AuxiliaryGraph::fill_RD_table(std::vector<std::vector<int>>& RD_table,
                                      const Path& P, int b, int L) {
-    // Run Dijkstra from root
-    SSSPResult sssp = Dijkstra(weighted_adj, root_id);
+    // Run Dijkstra from root and store result for path reconstruction
+    sssp_result = Dijkstra(weighted_adj, root_id);
 
     int path_len = P.size();
 
@@ -173,8 +212,8 @@ void AuxiliaryGraph::fill_RD_table(std::vector<std::vector<int>>& RD_table,
 
             // Get distance from root to target
             int dist_from_root = INF;
-            if (sssp.distances.find(target_vertex) != sssp.distances.end()) {
-                dist_from_root = sssp.distances.at(target_vertex);
+            if (sssp_result.distances.find(target_vertex) != sssp_result.distances.end()) {
+                dist_from_root = sssp_result.distances.at(target_vertex);
             }
 
             // The actual replacement distance from P[k] to P[k+j] is:

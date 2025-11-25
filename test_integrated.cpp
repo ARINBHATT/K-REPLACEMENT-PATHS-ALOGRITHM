@@ -46,7 +46,7 @@ Graph create_large_test_graph(int& source, int& target, Path& expected_shortest_
     g.add_edge(120, 141);
 
     // === SHORT DETOURS ===
-    // For L = ceil(sqrt(150)) = 13, short detours have length <= 26
+    // For L = ceil(sqrt(150)) = 13, short detours have length <= L (not 2L)
 
     // Short detour for edge 0->15: 0 -> 1 -> 2 -> 15 (length 3, bypasses 1 edge)
     g.add_edge(0, 1);
@@ -183,8 +183,8 @@ void test_replacement_paths() {
     std::cout << "  Expected: LONG detour via 45->46->...->75->80 (length ~30)" << std::endl;
     std::cout << "  Computed: " << (results[2].is_short_detour ? "SHORT" : "LONG")
               << " detour, length = " << results[2].length << std::endl;
-    std::cout << "  L = " << solver.get_L() << ", so 2L = " << 2 * solver.get_L() << std::endl;
-    std::cout << "  This detour should be classified as LONG since length > 2L" << std::endl;
+    std::cout << "  L = " << solver.get_L() << std::endl;
+    std::cout << "  This detour should be classified as LONG since length > L" << std::endl;
 
     std::cout << "\nEdge 3 (80->120) Analysis:" << std::endl;
     std::cout << "  Expected: SHORT detour via 80->90->100->110->120 (length 4)" << std::endl;
@@ -192,10 +192,10 @@ void test_replacement_paths() {
               << " detour, length = " << results[3].length << std::endl;
 
     std::cout << "\nEdge 4 (120->141) Analysis:" << std::endl;
-    std::cout << "  Expected: LONG/SHORT detour via 120->121->...->141 (length ~21)" << std::endl;
+    std::cout << "  Expected: LONG detour via 120->121->...->141 (length ~21)" << std::endl;
     std::cout << "  Computed: " << (results[4].is_short_detour ? "SHORT" : "LONG")
               << " detour, length = " << results[4].length << std::endl;
-    std::cout << "  With 2L = " << 2 * solver.get_L() << ", this is borderline" << std::endl;
+    std::cout << "  With L = " << solver.get_L() << ", this is LONG (> L)" << std::endl;
 
     // Verification
     std::cout << "\n" << std::string(70, '=') << std::endl;

@@ -3,6 +3,7 @@
 #include "common/CommonGraph.h"
 #include <vector>
 #include <cmath>
+#include <memory>
 
 // Forward declaration of AuxiliaryGraph
 class AuxiliaryGraph;
@@ -19,6 +20,9 @@ private:
     Path shortest_path;
     int L; // threshold for short detours (typically sqrt(n))
     std::vector<std::vector<int>> RD_table;
+
+    // Store auxiliary graphs for path reconstruction
+    std::vector<std::shared_ptr<AuxiliaryGraph>> auxiliary_graphs;
 
 public:
     /**
@@ -98,6 +102,11 @@ public:
     void fill_RD_table(std::vector<std::vector<int>>& RD_table, const Path& P, int b, int L);
 
     /**
+     * Get the SSSP result from the auxiliary graph (for path reconstruction)
+     */
+    const SSSPResult& get_sssp_result() const { return sssp_result; }
+
+    /**
      * Get the weighted adjacency list
      */
     const WeightedAdjacencyList& get_weighted_adj() const { return weighted_adj; }
@@ -106,4 +115,7 @@ public:
      * Get the root ID
      */
     int get_root_id() const { return root_id; }
+
+private:
+    SSSPResult sssp_result; // Store for path reconstruction
 };

@@ -165,7 +165,7 @@ void ReplacementPaths::compute_all_replacement_paths() {
     std::cout << "\n=== Computing Replacement Paths ===" << std::endl;
     std::cout << "Graph: n=" << graph.get_vertex_count()
               << ", Shortest path length=" << shortest_path.size() - 1 << std::endl;
-    std::cout << "Threshold L=" << L << " (short detours: length <= " << 2*L << ")" << std::endl;
+    std::cout << "Threshold L=" << L << " (short detours: length <= " << L << ")" << std::endl;
 
     // Step 1: Compute RD-Table for short detours
     std::cout << "\n--- Step 1: Computing Short Detours (RD-Table) ---" << std::endl;
@@ -182,23 +182,53 @@ void ReplacementPaths::compute_all_replacement_paths() {
     int num_long = 0;
     int num_none = 0;
 
+    int path_len = shortest_path.size();
+
+    // Define Priority Queue OUTSIDE the main loop for sliding window optimization
+    // Min-PQ stores {value, {start_index_a, jump_j}}
+    using PQElement = std::pair<int, std::pair<int, int>>;
+    std::priority_queue<PQElement, std::vector<PQElement>, std::greater<PQElement>> pq;
+
+    // Iterate through edges to be removed (i)
     for (int i = 0; i < (int)shortest_path.size() - 1; ++i) {
-        // Compute short detour cost using RD-table directly
-        int short_len = INF;
-        int path_len = shortest_path.size();
 
-        // Find best short detour
-        for (int a = 0; a <= i; a++) {
-            for (int j = 1; j <= L; j++) {
-                int b = a + j;
-                if (b <= i || b >= path_len) continue;
+        // A. Add NEW detours that start at the current index 'i'
+        //    These detours start at i (a=i) and land at b = i + j
+        for (int j = 1; j <= L; j++) {
+            int a = i;
+            int b = a + j;
+            if (b >= path_len) continue;
 
-                int detour_cost = short_detour_module.get_replacement_distance(a, j);
-                if (detour_cost == INF) continue;
-
-                int total = a + detour_cost + (path_len - 1 - b);
-                short_len = std::min(short_len, total);
+            int detour_cost = short_detour_module.get_replacement_distance(a, j);
+            if (detour_cost != INF) {
+                // Total cost = a + detour + suffix_len
+                int total_cost = a + detour_cost + (path_len - 1 - b);
+                pq.push({total_cost, {a, j}});
             }
+        }
+
+        // B. Remove INVALID detours (Lazy Deletion)
+        //    A detour is invalid if it lands at or before the removed edge 'i' (b <= i)
+        //    because it doesn't actually bypass the break.
+        while (!pq.empty()) {
+            int a = pq.top().second.first;
+            int j = pq.top().second.second;
+            int b = a + j;
+
+            // If the detour lands after the break (b > i), it is valid.
+            // Since we also add detours sequentially, 'a' is always <= i.
+            if (b > i) {
+                break;
+            }
+
+            // Otherwise, this detour ends too early. Remove it.
+            pq.pop();
+        }
+
+        // C. The top of the PQ is now the best valid short detour
+        int short_len = INF;
+        if (!pq.empty()) {
+            short_len = pq.top().first;
         }
 
         // Get long detour length
