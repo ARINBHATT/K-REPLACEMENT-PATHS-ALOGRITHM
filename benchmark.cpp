@@ -243,7 +243,7 @@ int main() {
 
     // Test 1: Small random graphs
     std::cout << "\n### TEST SUITE 1: Random Graphs (Small to Medium) ###\n";
-    std::vector<int> sizes = {50, 100, 200, 300, 400, 500};
+    std::vector<int> sizes = {50, 100, 200, 300, 400, 500, 5000};
 
     for (int n : sizes) {
         int source, target;
@@ -281,7 +281,7 @@ int main() {
     for (int n : large_sizes) {
         int source, target;
         Path shortest_path;
-        double edge_prob = 0.01;  // Very sparse for large graphs
+        double edge_prob = 0.05;  // Very sparse for large graphs
 
         Graph g = generate_random_graph(n, edge_prob, source, target, shortest_path);
         BenchmarkResult result = run_benchmark(g, shortest_path, false);
