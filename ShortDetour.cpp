@@ -3,10 +3,6 @@
 #include <iostream>
 #include <algorithm>
 
-// ============================================================================
-// ShortDetour Implementation
-// ============================================================================
-
 ShortDetour::ShortDetour(const Graph& G, const Path& P)
     : original_graph(G), shortest_path(P) {
 
@@ -61,12 +57,7 @@ Path ShortDetour::shortRepPath(int edge_index) {
     int best_distance = INF;
     int best_start = -1;
     int best_jump = -1;
-    int best_offset = -1; // Which auxiliary graph (offset b) was used
-
-    // Find the best short detour that bypasses the removed edge
-    // We need a detour from P[a] to P[b] where a <= edge_index < b
-    // and the detour length is <= L
-
+    int best_offset = -1; 
     for (int a = 0; a <= edge_index; a++) {
         for (int j = 1; j <= L; j++) {
             int b = a + j;
@@ -100,9 +91,6 @@ Path ShortDetour::shortRepPath(int edge_index) {
     if (best_start == -1 || best_offset == -1 || best_offset >= (int)auxiliary_graphs.size()) {
         return {};
     }
-
-    // Reconstruct the replacement path using parent pointers
-    // Path consists of: P[0..best_start] + detour(P[best_start] -> P[best_start+best_jump]) + P[best_start+best_jump..end]
 
     Path replacement;
 
@@ -161,10 +149,6 @@ Path ShortDetour::shortRepPath(int edge_index) {
 
     return replacement;
 }
-
-// ============================================================================
-// AuxiliaryGraph Implementation
-// ============================================================================
 
 AuxiliaryGraph::AuxiliaryGraph(const Graph& G_minus_P, const Path& P, int b, int L) {
     num_vertices = G_minus_P.get_vertex_count() + 1; // +1 for virtual root

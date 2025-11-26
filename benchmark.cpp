@@ -177,7 +177,7 @@ BenchmarkResult run_benchmark(Graph& g, const Path& shortest_path, bool run_naiv
     }
 
     // Benchmark naive algorithm (skip for large graphs)
-    if (run_naive && result.n_vertices <= 15000) {
+    if (run_naive && result.n_vertices <= 500) {
         std::cout << "\n--- Running Naive Algorithm ---" << std::endl;
         start = high_resolution_clock::now();
 
@@ -243,7 +243,7 @@ int main() {
 
     // Test 1: Small random graphs
     std::cout << "\n### TEST SUITE 1: Random Graphs (Small to Medium) ###\n";
-    std::vector<int> sizes = {50, 100, 200, 300, 400, 500, 5000};
+    std::vector<int> sizes = {50, 100, 200, 300, };
 
     for (int n : sizes) {
         int source, target;

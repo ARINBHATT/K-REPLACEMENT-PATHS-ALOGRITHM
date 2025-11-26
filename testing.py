@@ -61,12 +61,25 @@ def run_cpp_program_n_times_with_logging(cpp_file, exec_name, n, log_output_file
                 # Execute the program, capturing its output
                 result = subprocess.run(run_command, check=True, text=True, capture_output=True)
                 
-                stdout_content = result.stdout.strip()
+                stdout_content = result.stdout
+                
+                # Extract the benchmark summary table
+                summary_start_index = stdout_content.find("BENCHMARK SUMMARY")
+                summary_content = ""
+                if summary_start_index != -1:
+                    # Find the start of the table header after "BENCHMARK SUMMARY"
+                    table_header_index = stdout_content.find("n ", summary_start_index)
+                    if table_header_index != -1:
+                        # Find the start of the '====' line before "BENCHMARK SUMMARY"
+                        summary_block_start = stdout_content.rfind("===", 0, summary_start_index)
+                        if summary_block_start != -1:
+                            summary_content = stdout_content[summary_block_start:].strip()
+
                 stderr_content = result.stderr.strip()
 
-                if stdout_content:
-                    print(f"STDOUT:\n{stdout_content}")
-                    log_f.write(f"STDOUT:\n{stdout_content}\n")
+                if summary_content:
+                    print(f"Benchmark Summary:\n{summary_content}")
+                    log_f.write(f"{summary_content}\n\n")
                 if stderr_content:
                     print(f"STDERR:\n{stderr_content}")
                     log_f.write(f"STDERR:\n{stderr_content}\n")

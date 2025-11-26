@@ -47,7 +47,6 @@ Graph create_large_test_graph(int& source, int& target, Path& expected_shortest_
 
     // === SHORT DETOURS ===
     // For L = ceil(sqrt(150)) = 13, short detours have length <= L (not 2L)
-
     // Short detour for edge 0->15: 0 -> 1 -> 2 -> 15 (length 3, bypasses 1 edge)
     g.add_edge(0, 1);
     g.add_edge(1, 2);
@@ -63,6 +62,7 @@ Graph create_large_test_graph(int& source, int& target, Path& expected_shortest_
     // Long detour for edge 45->80: Goes through many intermediate vertices
     // 45 -> 46 -> 47 -> ... -> 60 -> 61 -> 62 -> ... -> 75 -> 80
     // This creates a path of length ~30 (> 2L = 26)
+    
     for (int i = 45; i < 60; ++i) {
         g.add_edge(i, i + 1);
     }
